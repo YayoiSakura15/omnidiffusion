@@ -1,0 +1,55 @@
+# OmniFlows 子项目（独立的 git 仓库）
+jiangqf/
+
+# 数据文件
+dataset/audiocaps/
+dataset/coco/
+dataset/llava_cc3m/
+dataset/wikitext103/
+dataset/data/
+
+# 模型文件
+jiangqf/OmniFlows/models/
+*.pth
+*.pt
+*.safetensors
+*.bin
+
+# 训练输出
+jiangqf/OmniFlows/checkpoints/
+jiangqf/OmniFlows/logs/
+jiangqf/OmniFlows/results/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+dist/
+build/
+
+# 虚拟环境
+venv/
+env/
+ENV/
+omniflow_env/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# 系统文件
+.DS_Store
+Thumbs.db
+
+# Wandb
+wandb/
+
+# 临时文件
+*.tmp
+*.log
