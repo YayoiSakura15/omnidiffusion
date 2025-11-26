@@ -1,0 +1,55 @@
+# 模型权重文件、资源文件、训练输出（根目录）
+/models/
+/assets/
+/checkpoints/
+/logs/
+/results/
+/wandb/
+/ckpts/
+
+# 模型二进制文件
+*.pth
+*.pt
+*.safetensors
+*.bin
+*.ckpt
+*.h5
+*.pb
+*.onnx
+
+# Python
+**/__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+omniflow.egg-info/
+dist/
+build/
+
+# 虚拟环境
+venv/
+env/
+ENV/
+omniflow_env/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.claude/
+
+# 系统文件
+.DS_Store
+Thumbs.db
+
+# 临时文件
+*.tmp
+*.log
+
+# 非核心文件
+readme.MD
+scripts/train_text.py.modified

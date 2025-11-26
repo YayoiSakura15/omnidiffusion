@@ -1,0 +1,61 @@
+{
+  "train": {
+    "datasets": [
+      {
+        "type": "hf_dataset",
+        "path": "../../dataset/wikitext103/subset",
+        "text_field": "text",
+        "modality": "text",
+        "weight": 0.3
+      },
+      {
+        "type": "hf_dataset",
+        "path": "../../dataset/coco/subset",
+        "text_field": "caption",
+        "modality": "image+text",
+        "weight": 0.3
+      },
+      {
+        "type": "hf_dataset",
+        "path": "../../dataset/audiocaps/subset",
+        "text_field": "caption",
+        "modality": "audio+text",
+        "weight": 0.2
+      },
+      {
+        "type": "hf_dataset",
+        "path": "../../dataset/llava_cc3m/subset",
+        "text_field": "conversations",
+        "modality": "image+text",
+        "weight": 0.2
+      }
+    ],
+    "min_length": 3
+  },
+  "val": {
+    "datasets": [
+      {
+        "type": "hf_dataset",
+        "path": "../../dataset/wikitext103/subset",
+        "text_field": "text",
+        "modality": "text",
+        "weight": 0.4
+      },
+      {
+        "type": "hf_dataset",
+        "path": "../../dataset/coco/subset",
+        "text_field": "caption",
+        "modality": "image+text",
+        "weight": 0.3
+      },
+      {
+        "type": "hf_dataset",
+        "path": "../../dataset/audiocaps/subset",
+        "text_field": "caption",
+        "modality": "audio+text",
+        "weight": 0.3
+      }
+    ],
+    "min_length": 3
+  }
+}
