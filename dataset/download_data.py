@@ -39,19 +39,41 @@ def ensure_dir(path: str):
     os.makedirs(path, exist_ok=True)
 
 
+def build_download_config(
+    cache_dir: Optional[str],
+    max_retries: int,
+    num_proc: int,
+    force_download: bool,
+) -> DownloadConfig:
+    """
+    为当前机器的网络情况构造 DownloadConfig。
+
+    - max_retries: 单个文件的最大重试次数
+    - num_proc: 下载/parquet 处理时的并发进程数（网络差时建议 1）
+    - force_download: 是否强制重新下载（默认 False，避免反复从 0 开始）
+    """
+    return DownloadConfig(
+        cache_dir=cache_dir,
+        max_retries=max_retries,
+        num_proc=num_proc,
+        force_download=force_download,
+        resume_download=True,
+        local_files_only=False,
+        use_etag=True,
+    )
+
+
 def pick_split(
     hf_id: str,
     default_split: str,
-    config_name: Optional[str] = None,
+    config_name: Optional[str],
+    download_config: DownloadConfig,
 ) -> Tuple[str, Dataset]:
     """
     非 streaming 模式：优先加载 default_split（通常是 'train'），
     如果失败，尝试自动发现可用 split。
-    加入 DownloadConfig(force_download=True) 来强制重新下载，避免之前下载坏掉。
     """
     print(f"[INFO] 加载数据集: {hf_id}, config={config_name}")
-    download_config = DownloadConfig(force_download=True)
-
     # 优先尝试直接加载指定 split
     try:
         if config_name is not None:
@@ -128,6 +150,7 @@ def process_one_dataset_normal(
     data_root: str,
     subset_fraction: float,
     max_samples: Optional[int],
+    download_config: DownloadConfig,
 ):
     """
     普通（非 streaming）模式：
@@ -138,7 +161,7 @@ def process_one_dataset_normal(
     default_split = cfg.get("default_split", "train")
     config_name = cfg.get("config_name", None)
 
-    split_name, ds = pick_split(hf_id, default_split, config_name)
+    split_name, ds = pick_split(hf_id, default_split, config_name, download_config)
 
     is_full = (subset_fraction >= 0.9999) and (max_samples is None)
 
@@ -166,6 +189,7 @@ def process_one_dataset_streaming(
     cfg: dict,
     data_root: str,
     max_samples: Optional[int],
+    download_config: DownloadConfig,
 ):
     """
     streaming 模式：
@@ -186,8 +210,6 @@ def process_one_dataset_streaming(
         )
 
     print(f"[INFO][STREAMING] 加载数据集: {hf_id}, config={config_name}, split={default_split}")
-    download_config = DownloadConfig(force_download=True)
-
     try:
         if config_name is not None:
             ds_iter = load_dataset(
@@ -296,6 +318,36 @@ def parse_args():
         ),
     )
 
+    # —— 下载相关配置（重点） ——————————————————————————
+    parser.add_argument(
+        "--hf-cache-dir",
+        type=str,
+        default=None,
+        help=(
+            "自定义 HF 数据集缓存目录（默认使用环境变量 DATASETS_CACHE / HF_HOME 等）。"
+        ),
+    )
+    parser.add_argument(
+        "--download-max-retries",
+        type=int,
+        default=10,
+        help="单个文件下载失败时的最大重试次数（默认 10）。",
+    )
+    parser.add_argument(
+        "--download-num-proc",
+        type=int,
+        default=1,
+        help="下载/parquet 处理的并发进程数，网络差时建议 1（默认 1）。",
+    )
+    parser.add_argument(
+        "--force-download",
+        action="store_true",
+        help=(
+            "强制重新下载所有文件（默认关闭）。"
+            "只有在缓存确实坏掉、且已经清空缓存目录的情况下再打开。"
+        ),
+    )
+
     args = parser.parse_args()
     return args
 
@@ -303,7 +355,7 @@ def parse_args():
 def main():
     args = parse_args()
 
-    # data_root：默认改为“脚本所在目录的 data/”
+    # data_root：默认 = 脚本所在目录的 data/
     if args.data_root is not None:
         data_root = args.data_root
     else:
@@ -312,6 +364,20 @@ def main():
 
     os.makedirs(data_root, exist_ok=True)
     print(f"[INFO] 数据根目录: {data_root}")
+
+    # 构造 DownloadConfig（统一传给所有 load_dataset 调用）
+    download_config = build_download_config(
+        cache_dir=args.hf_cache_dir,
+        max_retries=args.download_max_retries,
+        num_proc=args.download_num_proc,
+        force_download=args.force_download,
+    )
+    print(
+        f"[INFO] 下载配置: cache_dir={download_config.cache_dir}, "
+        f"max_retries={download_config.max_retries}, "
+        f"num_proc={download_config.num_proc}, "
+        f"force_download={download_config.force_download}"
+    )
 
     # 确定要处理哪些数据集
     selected = []
@@ -348,6 +414,7 @@ def main():
                 cfg=cfg,
                 data_root=data_root,
                 max_samples=args.max_samples,
+                download_config=download_config,
             )
         else:
             process_one_dataset_normal(
@@ -356,6 +423,7 @@ def main():
                 data_root=data_root,
                 subset_fraction=args.subset_fraction,
                 max_samples=args.max_samples,
+                download_config=download_config,
             )
 
     print("==========================================")
