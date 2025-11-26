@@ -6,7 +6,7 @@ import os
 from typing import Optional, Tuple
 from itertools import islice
 
-from datasets import load_dataset, Dataset
+from datasets import load_dataset, Dataset, DownloadConfig
 
 
 # 目前用到的 HF 数据集配置
@@ -47,14 +47,26 @@ def pick_split(
     """
     非 streaming 模式：优先加载 default_split（通常是 'train'），
     如果失败，尝试自动发现可用 split。
+    加入 DownloadConfig(force_download=True) 来强制重新下载，避免之前下载坏掉。
     """
     print(f"[INFO] 加载数据集: {hf_id}, config={config_name}")
+    download_config = DownloadConfig(force_download=True)
+
     # 优先尝试直接加载指定 split
     try:
         if config_name is not None:
-            ds = load_dataset(hf_id, config_name, split=default_split)
+            ds = load_dataset(
+                hf_id,
+                config_name,
+                split=default_split,
+                download_config=download_config,
+            )
         else:
-            ds = load_dataset(hf_id, split=default_split)
+            ds = load_dataset(
+                hf_id,
+                split=default_split,
+                download_config=download_config,
+            )
         print(f"[INFO] 使用 split='{default_split}'，样本数: {len(ds)}")
         return default_split, ds
     except Exception as e:
@@ -63,9 +75,16 @@ def pick_split(
 
         # 加载整个字典，再挑一个 split
         if config_name is not None:
-            dsdict = load_dataset(hf_id, config_name)
+            dsdict = load_dataset(
+                hf_id,
+                config_name,
+                download_config=download_config,
+            )
         else:
-            dsdict = load_dataset(hf_id)
+            dsdict = load_dataset(
+                hf_id,
+                download_config=download_config,
+            )
 
         if default_split in dsdict:
             ds = dsdict[default_split]
@@ -167,6 +186,8 @@ def process_one_dataset_streaming(
         )
 
     print(f"[INFO][STREAMING] 加载数据集: {hf_id}, config={config_name}, split={default_split}")
+    download_config = DownloadConfig(force_download=True)
+
     try:
         if config_name is not None:
             ds_iter = load_dataset(
@@ -174,12 +195,14 @@ def process_one_dataset_streaming(
                 config_name,
                 split=default_split,
                 streaming=True,
+                download_config=download_config,
             )
         else:
             ds_iter = load_dataset(
                 hf_id,
                 split=default_split,
                 streaming=True,
+                download_config=download_config,
             )
     except Exception as e:
         print(f"[ERROR][STREAMING] 加载 {hf_id} 失败: {e}")
@@ -218,7 +241,7 @@ def parse_args():
         "--data-root",
         type=str,
         default=None,
-        help="数据根目录（默认: 脚本上级目录的 data/）",
+        help="数据根目录（默认: 脚本所在目录的 data/）",
     )
 
     # 选择数据集
@@ -280,12 +303,13 @@ def parse_args():
 def main():
     args = parse_args()
 
-    # data_root
+    # data_root：默认改为“脚本所在目录的 data/”
     if args.data_root is not None:
         data_root = args.data_root
     else:
         script_dir = os.path.dirname(os.path.abspath(__file__))
-        data_root = os.path.join(os.path.dirname(script_dir), "data")
+        data_root = os.path.join(script_dir, "data")
+
     os.makedirs(data_root, exist_ok=True)
     print(f"[INFO] 数据根目录: {data_root}")
 

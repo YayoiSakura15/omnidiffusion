@@ -1,4 +1,4 @@
-# OmniFlows 子项目（独立的 git 仓库）
+# 原始项目目录（不上传，避免泄露个人信息）
 jiangqf/
 
 # 数据文件
@@ -8,17 +8,23 @@ dataset/llava_cc3m/
 dataset/wikitext103/
 dataset/data/
 
-# 模型文件
-jiangqf/OmniFlows/models/
+# 模型文件、资源文件、训练输出（全部忽略）
+models/
+assets/
+checkpoints/
+logs/
+results/
+wandb/
+
+# 模型二进制文件（额外保护）
 *.pth
 *.pt
 *.safetensors
 *.bin
-
-# 训练输出
-jiangqf/OmniFlows/checkpoints/
-jiangqf/OmniFlows/logs/
-jiangqf/OmniFlows/results/
+*.ckpt
+*.h5
+*.pb
+*.onnx
 
 # Python
 __pycache__/
